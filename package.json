@@ -1,0 +1,17 @@
+{
+  "name": "gsm-text-communicator",
+  "version": "1.0.0",
+  "description": "Telegram bot that relays /location {number} queries over a GSM SIM via an Android gateway phone",
+  "main": "bot.js",
+  "scripts": {
+    "start": "bun bot.js",
+    "start:node": "node bot.js",
+    "test": "bun test test/",
+    "test:node": "node --test test/"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.59.0"
+  }
+}
