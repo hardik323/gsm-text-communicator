@@ -6,6 +6,9 @@
 > Send `/location 12345` in Telegram, the phone texts it out, and the answer comes back to the chat.
 >
 > **Time needed:** ~10 minutes · **Coding required:** none
+>
+> 🤖 **Your bot:** [@geopulse_official_bot](https://t.me/geopulse_official_bot) —
+> open it in Telegram, press **Start**, then use the commands below.
 
 ---
 
@@ -41,7 +44,8 @@ The bot keeps one request per chat, so **several people can wait at the same tim
 
 - [ ] A phone with an active SIM, able to **send SMS** (has credit).
 - [ ] That phone and this PC on the **same Wi-Fi / LAN**.
-- [ ] Your Telegram bot token (already in `.env`).
+- [ ] Your bot open in Telegram: **@geopulse_official_bot** → https://t.me/geopulse_official_bot
+- [ ] The bot token already in `.env` — never commit it, paste it in chat, or share it.
 - [ ] The number of the device that will **answer** the location queries.
 
 > **Why the same network?**
@@ -209,7 +213,7 @@ curl -u '<username>:<password>' 'http://192.168.31.50:8080/inbox?type=SMS&limit=
 
 ## Test 4 — Full round trip through Telegram
 
-1. In Telegram, send to your bot:
+1. Open **@geopulse_official_bot** in Telegram and send:
 
    ```
    /location 12345
@@ -295,25 +299,8 @@ These need no phone and no Telegram connection.
 | Works, then stops after some minutes | Battery optimisation, or the phone's Wi-Fi sleep — step 1.4 |
 | SMS sends, but the chat never gets the reply | `GATEWAY_SIM_DESTINATION_NUMBER` is not the number that actually replied |
 | Two chats, wrong chat answered | Both replies contained no number — make the destination include the requested number in its answer |
-| `EADDRINUSE` / “port 8080 in use” on this PC | You are running an old `local`-backend process; stop it. In `smsgate` mode the bot opens **no** port |
 | Long reply looks cut off | The app's `contentPreview` shortens very long SMS |
 | Nothing works after an Android update | Re-grant SMS permissions; open the app once |
-
----
-
-# 🔁 Alternative: bundled app instead of the store app
-
-If you would rather not install the third-party app, the repository contains its own Android gateway (`android-gateway/`). The direction of the connection flips: the **phone polls the bot**, so the bot can run anywhere.
-
-```ini
-SMS_PROVIDER=local
-GATEWAY_TOKEN=<long random string>
-GATEWAY_SIM_SENDER_NUMBER=<the phone's SIM number>
-GATEWAY_HOST=0.0.0.0
-GATEWAY_PORT=8080
-```
-
-Then build the app (`android-gateway/`, see `README.md`) and point it at `http://<this-PC-ip>:8080` with the same token. The bot then serves `/gateway/outbox/claim`, `/gateway/outbox/result` and `/gateway/inbound` instead of polling an inbox.
 
 ---
 
@@ -334,15 +321,12 @@ Then build the app (`android-gateway/`, see `README.md`) and point it at `http:/
 | Variable | Default | Used by |
 | :-- | :-- | :-- |
 | `TELEGRAM_BOT_TOKEN` | — | both |
-| `SMS_PROVIDER` | `smsgate` | both |
+| `SMS_PROVIDER` | `smsgate` | backend selector |
 | `SMSGATE_URL` | — | smsgate |
 | `SMSGATE_USERNAME` / `SMSGATE_PASSWORD` | — | smsgate |
 | `SMSGATE_POLL_SECONDS` | `5` | smsgate |
 | `GATEWAY_SIM_DESTINATION_NUMBER` | — | both |
 | `RESPONSE_TIMEOUT_MINUTES` | `5` | both |
-| `GATEWAY_SIM_SENDER_NUMBER` / `GATEWAY_TOKEN` | — | local |
-| `GATEWAY_HOST` / `GATEWAY_PORT` | `0.0.0.0` / `8080` | local |
-| `CLAIM_LEASE_SECONDS` | `60` | local |
 | `SEND_MAX_ATTEMPTS` | `3` | both |
 | `DATA_FILE` | `data/state.json` | both |
 

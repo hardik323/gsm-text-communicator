@@ -26,13 +26,8 @@ Thumbs.db
 dist/
 build/
 
-# Android
-android-gateway/.gradle/
-android-gateway/build/
-android-gateway/app/build/
-android-gateway/local.properties
-android-gateway/.idea/
-android-gateway/.toolchain/
+# Android gateway app — superseded by the SMS Gateway for Android app (not shipped)
+android-gateway/
 
 # Contains a live bot token - never commit
 New Text Document.txt

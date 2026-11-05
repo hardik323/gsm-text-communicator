@@ -8,12 +8,9 @@ Project layout:
 | Folder | Contents |
 | --- | --- |
 | `bot.js`, `lib/`, `config.js` | Telegram bot + HTTP gateway API (server side) |
-| `android-gateway/` | Android app that turns a phone's SIM into the GSM modem |
 | `test/` | Tests for the queue / reply / timeout logic |
 
-The SIM lives in an old Android phone running **`android-gateway/`**: the bot
-queues SMS, the phone polls for them, sends them through its SIM, and forwards
-every incoming SMS back to the bot.
+The SIM lives in an Android phone running the free **SMS Gateway for Android** app in Local Server mode: the bot posts the SMS to the phone, the phone sends it through its SIM, and the bot reads the reply from the phone's inbox.
 
 ## Flow
 
@@ -73,11 +70,11 @@ mode; the cloud mode of the app delivers incoming SMS through webhooks instead.
 The inbox returns `contentPreview`, which the app may shorten for very long SMS.
 Replies are expected to be one or two SMS parts.
 
-### `local` — the bundled app in `android-gateway/`
+### `local` — legacy server-side backend
 
-Here the phone polls the bot, so the bot can run anywhere (even behind NAT) and
-the phone just needs outbound internet. Requires building the app; see
-[Android gateway app](#android-gateway-app-android-gateway) below.
+Kept for completeness: the phone polls the bot (`/gateway/outbox/claim`), so the
+bot can run behind NAT. The Android app that spoke this protocol is no longer
+part of the repository (it is git-ignored), so `smsgate` is the supported path.
 
 ## Bot setup
 
@@ -130,40 +127,6 @@ A claimed SMS is leased for `CLAIM_LEASE_SECONDS`; if the phone dies mid-send th
 request is handed out again. Failed sends are retried up to `SEND_MAX_ATTEMPTS`
 times before the chat is told the send failed. `messageId` makes inbound
 delivery idempotent, so a re-delivered SMS never produces two answers.
-
-## Android gateway app (`android-gateway/`)
-
-Small Kotlin app, no dependencies beyond AndroidX:
-
-- Settings screen: bot URL, gateway token, poll interval, auto-start after reboot
-- `GatewayService` — foreground service that polls `/gateway/outbox/claim`,
-  sends the SMS with `SmsManager` (multipart aware) and reports the result
-- `SmsReceiver` — forwards every incoming SMS to `/gateway/inbound`
-- `BootReceiver` — restarts the service after a reboot
-
-### Build
-
-Requires JDK 17 and the Android SDK (compileSdk 34).
-
-```bash
-cd android-gateway
-gradle wrapper          # once, if gradlew is missing
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
-
-Or open `android-gateway/` in Android Studio and press Run.
-
-### Phone setup
-
-1. Grant the SMS and notification permissions on first launch.
-2. Enter the bot URL (`http://192.168.1.x:8080` on a LAN) and the gateway token.
-3. Press **Start** and allow the notification. Keep the phone charged, plugged in,
-   with the screen lock disabled.
-
-Android only lets the *default* SMS app receive `SMS_DELIVER`, but `SMS_RECEIVED`
-is still delivered to any app holding `RECEIVE_SMS`, which is what this app uses
-— so it does not have to be the default messaging app.
 
 ## Notes and limits
 

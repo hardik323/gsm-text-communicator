@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!--
-  Plain HTTP is allowed because the bot usually runs on a LAN address while
-  testing. Prefer an HTTPS URL (reverse proxy / Tailscale / ngrok) in production.
--->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
-</network-security-config>
