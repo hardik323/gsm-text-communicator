@@ -31,3 +31,6 @@ android-gateway/
 
 # Contains a live bot token - never commit
 New Text Document.txt
+
+# Local tooling (portable postgres binaries, node shim, db files)
+.tools/

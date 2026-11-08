@@ -1,0 +1,59 @@
+here, we are building a bot where user will request a mobile number (query number) our bot will check, process and will response the current location of that query number.
+
+Now lets first created telegram bot file, where it will accpet the message by /location {query_number}
+reply use as "your command accepted, wait for few minutes till we process the location of {query_number}
+
+everyother messages will be rejected with beauful reply like, "wrong command"
+
+if user sends more than 3 messages per minute and all got rejected, this is probable spam, then do not respond him for that user. just tell him you got blocked for next 1 minute and do not attempt him for that next 1 minute.
+-----
+lets create a postgresql database with name "geopulse_official_bot"
+lets use prisma to approch model first database
+
+add table as "locationRequests"
+with following fields;
+UserId
+ChatId
+QueryNumber
+TSP
+NodalResponse
+Status
+	1=created
+	2=TspRequested
+	3=tsp-found
+	4=TspNotFound
+	5=locationRequested
+	6=NodalResponseFound
+	7=NodalResponseTimeout
+CreatedDateTime
+LastStatusChangeDateTime
+
+
+let me know if I am missing anything here
+------------
+so when we accept the command, write in database "locationRequests"table
+set status=1
+
+--------------
+Lets install redis if not there
+create a programme.js file and at start spin a redis pub/sub topicw name as "LocationRequests"
+---------
+write everything until now in env
+where everthing is confirgurable
+----------
+run database migration
+
+-----------
+After accepting and save in dabase the telegram command;
+create a json object of the same.
+and send it on the pub/sub topic "LocationRequests"
+
+-----
+in programme.js file,
+accept any every requests which has status:created
+---
+lets organise this code properly
+this makes very hard to find and maintain code as of now.
+
+if there are multiline functionality, write in kind of library files
+keep library files based on module or specific classification to find and understand easy

@@ -1,0 +1,66 @@
+// Prisma schema — model first.
+// Database: PostgreSQL, database name "geopulse_official_bot".
+//
+// Table/column names deliberately match the agreed spec (camelCase), so in raw
+// SQL they must be quoted. Prisma generates the quoting for you.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Every /location request a user makes.
+///
+/// Status codes:
+///   1 = created             request accepted from Telegram
+///   2 = TspRequested        sent to the TSP / carrier
+///   3 = TspFound            carrier located
+///   4 = TspNotFound         carrier could not be located
+///   5 = locationRequested   location lookup started
+///   6 = NodalResponseFound  nodal reply received
+///   7 = NodalResponseTimeout nodal reply did not arrive
+model locationRequests {
+  /// Surrogate key: a request's status changes many times, so it needs an
+  /// immutable identifier that is independent of who asked and for what.
+  Id String @id @default(uuid()) @db.Uuid
+
+  /// Telegram user id (from.id). BIGINT: ids are already past 2^31.
+  UserId BigInt
+
+  /// Telegram chat id (chat.id). Negative for groups, so it must be signed.
+  ChatId BigInt
+
+  /// The number being located, digits with optional leading "+" (max E.164).
+  QueryNumber String @db.VarChar(16)
+
+  /// Telecom service provider / carrier that answered.
+  TSP String? @db.VarChar(100)
+
+  /// Raw reply from the nodal lookup.
+  NodalResponse String? @db.Text
+
+  /// 1..7, see the status list above. Enforced by a CHECK constraint.
+  Status Int @default(1)
+
+  CreatedDateTime DateTime @default(now()) @db.Timestamptz(3)
+
+  LastStatusChangeDateTime DateTime @default(now()) @db.Timestamptz(3)
+
+  /// Replies are matched per chat, newest first.
+  @@index([ChatId, CreatedDateTime])
+
+  /// "How many times did this user ask for this number?" / abuse checks.
+  @@index([UserId, CreatedDateTime])
+
+  /// Lookups by the queried number itself.
+  @@index([QueryNumber])
+
+  /// The background worker scans open requests by status.
+  @@index([Status, CreatedDateTime])
+
+  @@map("locationRequests")
+}
