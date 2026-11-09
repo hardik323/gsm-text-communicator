@@ -9,9 +9,9 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { config } = require('../src/config');
-const { Status } = require('../src/constants/status');
-const { CHANNEL, subscribe, publishLocationRequest, publisher, close } = require('../src/queue/locationRequests');
+const { config } = require('../../src/config');
+const { Status } = require('../../src/constants/status');
+const { CHANNEL, subscribe, publishLocationRequest, publisher, close } = require('../../src/queue/locationRequests');
 
 const received = [];
 let available = false;
@@ -67,7 +67,9 @@ describe('LocationRequests channel', () => {
     if (!available) return;
 
     const receivers = await publishLocationRequest(request('it-created-1', Status.CREATED));
-    assert.equal(receivers, 1);
+    // The dashboard may also be subscribed, so at least our subscriber must
+    // have received it — the waitFor below proves delivery to this test.
+    assert.ok(receivers >= 1, `expected at least 1 receiver, got ${receivers}`);
 
     const message = await waitFor((p) => p.Id === 'it-created-1');
     assert.ok(message, 'created request should arrive');

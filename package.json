@@ -5,12 +5,18 @@
   "main": "bot.js",
   "scripts": {
     "start": "bun bot.js",
+    "programme": "bun programme.js",
+    "webhook": "bun webhook.js",
+    "dashboard": "bun dashboard.js",
+    "seed-users": "bun scripts/seed-users.js",
     "start:node": "node bot.js",
     "test": "bun test test/",
     "test:node": "node --test test/"
   },
   "dependencies": {
     "@prisma/client": "6",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "ioredis": "^6.0.0",

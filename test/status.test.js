@@ -3,7 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { Status, StatusName, VALID_STATUSES, isStatus, parseStatus } = require('../src/constants/status');
+const { Status, StatusName, VALID_STATUSES, OPEN_STATUSES, isStatus, parseStatus } = require('../src/constants/status');
 
 describe('status enum', () => {
   it('keeps the agreed numeric values', () => {
@@ -15,24 +15,31 @@ describe('status enum', () => {
       LOCATION_REQUESTED: 5,
       NODAL_RESPONSE_FOUND: 6,
       NODAL_RESPONSE_TIMEOUT: 7,
+      FAILED: 8,
     });
   });
 
-  it('exposes exactly seven valid statuses', () => {
-    assert.deepEqual(VALID_STATUSES, [1, 2, 3, 4, 5, 6, 7]);
+  it('exposes exactly eight valid statuses', () => {
+    assert.deepEqual(VALID_STATUSES, [1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it('knows which statuses mean "still in progress"', () => {
+    assert.deepEqual(OPEN_STATUSES, [Status.CREATED, Status.TSP_REQUESTED, Status.LOCATION_REQUESTED]);
   });
 
   it('maps numbers back to names', () => {
     assert.equal(StatusName[1], 'CREATED');
     assert.equal(StatusName[7], 'NODAL_RESPONSE_TIMEOUT');
+    assert.equal(StatusName[8], 'FAILED');
     assert.equal(StatusName[42], undefined);
   });
 
   it('isStatus accepts numbers and numeric strings', () => {
     assert.equal(isStatus(1), true);
     assert.equal(isStatus('7'), true);
+    assert.equal(isStatus(8), true);
     assert.equal(isStatus(0), false);
-    assert.equal(isStatus(8), false);
+    assert.equal(isStatus(9), false);
     assert.equal(isStatus('created'), false);
   });
 
@@ -42,6 +49,7 @@ describe('status enum', () => {
     assert.equal(parseStatus('created'), 1);
     assert.equal(parseStatus('Tsp-Requested'), 2);
     assert.equal(parseStatus('nodal response timeout'), 7);
+    assert.equal(parseStatus('failed'), 8);
   });
 
   it('parseStatus returns undefined for unknown values', () => {

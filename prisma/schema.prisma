@@ -23,6 +23,7 @@ datasource db {
 ///   5 = locationRequested   location lookup started
 ///   6 = NodalResponseFound  nodal reply received
 ///   7 = NodalResponseTimeout nodal reply did not arrive
+///   8 = FAILED               processing failed (terminal)
 model locationRequests {
   /// Surrogate key: a request's status changes many times, so it needs an
   /// immutable identifier that is independent of who asked and for what.
@@ -43,7 +44,14 @@ model locationRequests {
   /// Raw reply from the nodal lookup.
   NodalResponse String? @db.Text
 
-  /// 1..7, see the status list above. Enforced by a CHECK constraint.
+  /// The structured reply we sent back to Telegram, in case it needs keeping.
+  Response String? @db.Text
+
+  /// Human notes and exceptions: operator lookup failures, SMS send errors,
+  /// mismatched replies, and so on. Not shown to the user by default.
+  Comments String? @db.Text
+
+  /// 1..8, see the status list above. Enforced by a CHECK constraint.
   Status Int @default(1)
 
   CreatedDateTime DateTime @default(now()) @db.Timestamptz(3)
@@ -63,4 +71,44 @@ model locationRequests {
   @@index([Status, CreatedDateTime])
 
   @@map("locationRequests")
+}
+
+/// Telecommunications service providers the SMS Gateway phone can query.
+///
+/// `NodalNumber` is the short code the lookup SMS is sent to. It is stored
+/// exactly as given, spaces included (e.g. "070212 65165"); the gateway strips
+/// them when calling its API. `RequestFormat` is a column, not a constant,
+/// because each provider has its own template — Airtel/JIO use
+/// `91{query_number}`, Idea uses `CELL 91{query_number}` and BSNL uses
+/// `Getloc 91****` (which masks the number). `IsActive` retires a provider
+/// without deleting it.
+model Tsp {
+  Id           String  @id @default(uuid()) @db.Uuid
+  Provider     String  @unique @db.VarChar(50)
+  NodalNumber  String  @db.VarChar(32)
+  RequestFormat String @default("91{query_number}") @db.VarChar(64)
+  IsActive     Boolean @default(true)
+
+  CreatedDateTime          DateTime @default(now()) @db.Timestamptz(3)
+  LastStatusChangeDateTime DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([IsActive])
+  @@map("Tsp")
+}
+
+/// People who can log into the dashboard.
+///
+/// `PasswordHash` is a bcrypt hash of the user's password. `Role` controls
+/// what the dashboard shows: right now the only non-admin role is `viewer`,
+/// which gets a read-only copy of the same dashboard but no admin tooling.
+model User {
+  Id           String  @id @default(uuid()) @db.Uuid
+  Username     String  @unique @db.VarChar(64)
+  PasswordHash String  @db.VarChar(128)
+  Role         String  @default("viewer") @db.VarChar(20)
+
+  CreatedDateTime          DateTime @default(now()) @db.Timestamptz(3)
+  LastChangedDateTime      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("users")
 }

@@ -13,9 +13,14 @@
 
 const { config } = require('./src/config');
 const { createTelegramClient } = require('./src/telegram/client');
-const { createMessageHandler } = require('./src/telegram/handler');
+const { createMessageHandler, createReplyHandler } = require('./src/telegram/handler');
 const { disconnect: disconnectDb } = require('./src/db/prisma');
 const { close: closeQueue } = require('./src/queue/locationRequests');
+const {
+  CHANNEL: BOT_RESPONSE_CHANNEL,
+  subscribe: subscribeReplies,
+  close: closeReplies,
+} = require('./src/queue/botResponse');
 
 async function main() {
   if (!config.telegram.token) {
@@ -24,10 +29,15 @@ async function main() {
     process.exit(1);
   }
 
-  const { bot, send } = createTelegramClient(config.telegram.token);
+  const { bot, send, telegram } = createTelegramClient(config.telegram.token);
 
   bot.on('message', createMessageHandler({ send }));
   bot.on('polling_error', (error) => console.error('polling error:', error.message));
+
+  // Listen for the structured reply that the reply reactor publishes when a
+  // carrier SMS comes back and is matched to a request.
+  const unsubscribeReplies = await subscribeReplies(createReplyHandler({ send }));
+  console.log(`Listening on "${BOT_RESPONSE_CHANNEL}" (replies → Telegram user).`);
 
   console.log('Telegram bot is running.');
   console.log(
@@ -35,6 +45,14 @@ async function main() {
       config.spam.windowMs / 1000,
     )}s, then a ${Math.round(config.spam.blockMs / 60000)} minute block.`,
   );
+
+  // Clean up the reply subscription on shutdown.
+  if (bot) {
+    bot.once('close', async () => {
+      unsubscribeReplies();
+      await Promise.allSettled([closeReplies(), disconnectDb(), closeQueue()]);
+    });
+  }
 }
 
 if (require.main === module) {

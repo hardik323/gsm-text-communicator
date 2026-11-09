@@ -3,7 +3,7 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 
-const { HOW_TO, acceptedText, wrongText, failedText, blockedText } = require('../src/constants/messages');
+const { HOW_TO, acceptedText, wrongText, duplicateText, failedText, blockedText } = require('../src/constants/messages');
 
 describe('messages', () => {
   it('states the command format exactly once in HOW_TO', () => {
@@ -41,6 +41,20 @@ describe('messages', () => {
     assert.match(blockedText(60 * 1000), /next <b>1 minute<\/b>/);
     assert.match(blockedText(2 * 60 * 1000), /next <b>2 minutes<\/b>/);
     assert.match(blockedText(120 * 1000), /\/location \{mobile number\}/);
+  });
+
+  it('tells a repeat caller that the request is already in progress', () => {
+    const text = duplicateText('+919876543210', 1, new Date());
+    assert.match(text, /Already in progress/);
+    assert.match(text, /\+919876543210/);
+    assert.match(text, /just created/);
+    assert.match(text, /just now/);
+    assert.match(text, /No need to send it again/);
+  });
+
+  it('describes later open statuses in plain words', () => {
+    assert.match(duplicateText('1', 2, new Date()), /requested from the carrier/);
+    assert.match(duplicateText('1', 5, new Date()), /looking up the location/);
   });
 
   it('tells the user when the request could not be stored', () => {

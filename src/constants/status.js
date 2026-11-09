@@ -13,6 +13,7 @@
  *   5 LOCATION_REQUESTED    location lookup started
  *   6 NODAL_RESPONSE_FOUND  nodal reply received
  *   7 NODAL_RESPONSE_TIMEOUT nodal reply never arrived
+ *   8 FAILED                processing failed (terminal)
  */
 const Status = Object.freeze({
   CREATED: 1,
@@ -22,6 +23,7 @@ const Status = Object.freeze({
   LOCATION_REQUESTED: 5,
   NODAL_RESPONSE_FOUND: 6,
   NODAL_RESPONSE_TIMEOUT: 7,
+  FAILED: 8,
 });
 
 /** Reverse lookup: 1 -> 'CREATED'. */
@@ -30,6 +32,12 @@ const StatusName = Object.freeze(
 );
 
 const VALID_STATUSES = Object.freeze(Object.values(Status));
+
+/**
+ * Statuses that mean "still in progress". A repeated /location for the same
+ * number is only a duplicate while its request is in one of these.
+ */
+const OPEN_STATUSES = Object.freeze([Status.CREATED, Status.TSP_REQUESTED, Status.LOCATION_REQUESTED]);
 
 function isStatus(value) {
   return VALID_STATUSES.includes(Number(value));
@@ -49,4 +57,4 @@ function parseStatus(value) {
   return Object.prototype.hasOwnProperty.call(Status, key) ? Status[key] : undefined;
 }
 
-module.exports = { Status, StatusName, VALID_STATUSES, isStatus, parseStatus };
+module.exports = { Status, StatusName, VALID_STATUSES, OPEN_STATUSES, isStatus, parseStatus };

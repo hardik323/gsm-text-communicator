@@ -2,6 +2,8 @@
 
 /** Every message the bot sends. Kept together so wording changes happen in one place. */
 
+const { StatusName } = require('./status');
+
 const HOW_TO = [
   '<b>Send it like this</b>',
   '<code>/location {mobile number}</code>',
@@ -30,6 +32,32 @@ function wrongText(reason) {
   return ['🚫 <b>Wrong command</b>', '', HINTS[reason] || HINTS['unknown-command'], '', HOW_TO].join('\n');
 }
 
+/** Friendly: "will be" verbiage is derived from the status, so a repeat after it fails is a fresh request. */
+const PROGRESS_LABELS = {
+  1: 'just created',
+  2: 'requested from the carrier',
+  5: 'looking up the location',
+};
+
+function timeAgo(date) {
+  const s = Math.max(0, (Date.now() - new Date(date).getTime()) / 1000);
+  if (s < 45) return 'just now';
+  if (s < 3600) return `about ${Math.round(s / 60)} min ago`;
+  if (s < 86400) return `about ${Math.round(s / 3600)} h ago`;
+  return `about ${Math.round(s / 86400)} d ago`;
+}
+
+function duplicateText(number, status, createdAt) {
+  const label = PROGRESS_LABELS[status] || (StatusName[status] || 'in progress').toLowerCase();
+  return [
+    '⏳ <b>Already in progress</b>',
+    '',
+    `We already have a request for <code>${number}</code> — it's currently ${label} and it started ${timeAgo(createdAt)}.`,
+    '',
+    'No need to send it again; the result will arrive in this chat automatically.',
+  ].join('\n');
+}
+
 function failedText() {
   return [
     '⚠️ <b>Could not save your request</b>',
@@ -50,4 +78,4 @@ function blockedText(blockMs) {
   ].join('\n');
 }
 
-module.exports = { HOW_TO, HINTS, acceptedText, wrongText, failedText, blockedText };
+module.exports = { HOW_TO, HINTS, acceptedText, wrongText, duplicateText, failedText, blockedText, timeAgo };

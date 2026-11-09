@@ -57,3 +57,99 @@ this makes very hard to find and maintain code as of now.
 
 if there are multiline functionality, write in kind of library files
 keep library files based on module or specific classification to find and understand easy
+
+----
+lets create one more .md file, which should be useful to the user
+where it will say what is this app ? how it useful and how to use and start with it?
+--------------
+can you create a realtime web UI to track all requests from database with status like dashboard
+---
+Lets add 1 more status
+FAILED: 8
+------
+now in programme.js file, when we accept the created request from pub/sub lets send this message by  free, open-source [SMS Gateway for Android](https://sms-gate.app) app
+
+like this way, 
+sender will be the sender in the mobile sim card
+receiver we will keep env.Noal_Number
+message body should be like "91{query_number}"
+
+when we receive any text message from the sim card, create message-recieved pub/sub topic
+
+
+
+create listener of message-recieved pub/sub topic in programme.js file
+--------
+after sending sms, set the corrosponding row in database with status: LOCATION_REQUESTED
+------
+now create a database table Tsp (telecom service provider) with following feilds and data
+
+Provider	Nodal number	Request format
+Airtel	088001 12112	91{query_number}
+JIO	070212 65165	91{query_number}
+Idea	078248 34221	CELL 91{query_number}
+BSNL	094180 99998	Getloc 91****
+---------
+Now,
+when the request is created in programme.js lets
+ we will use this api
+https://apiexpress.in/apis/telecom-operator
+
+and find the operator and save this to the database table "locationRequests" in corosponding valve
+
+now that, as we have operator find the request format for "tsp" table and send sms according (which might require some existing code changes for the sms gateway part)
+
+
+after receiveing sms, send it to pub/sub topic "MessagesReceived" and listen it on programe.js file
+--------
+on sending request to https://apiexpress.in/apis/telecom-operator
+for for locationRequest table row's query_number, we will set the corosponding row status value to  "TSP_REQUESTED"
+and after we hear back from the api and if that expected response then we will set status value to  "TSP_FOUND"
+-----
+On listening in programe.js file "MessagesReceived" pub/sub topic, the received body will contain the query_number. find the query_number from locationRequests table and see if we got the location information or not?
+	- if we get the location information, update the locationRequests table relative row to status: NODAL_RESPONSE_FOUND
+	- if not then wait for next more 5 minutes and see if we get location related message, and even after 5 minutes we do not get the location then update the locationRequests table relative row to status: NODAL_RESPONSE_TIMEOUT
+
+as we send sms from mobile for locationRequest table row's query_number and we do hear back in 5 minutes, set the row status as "NODAL_RESPONSE_TIMEOUT" 
+----
+when the user requested in the bot, somehow bot got stuck and did not able to response withing 15 minutes, set corrosponding status = "FAILED" (which we call overall failed)
+-------
+on listending recieved sms on programme.js file by "MessagesReceived" pub/sub, let extract the information about what location information we got for which query_number
+
+after that, let's update the locationrequests table relative row to status: NODAL_RESPONSE_FOUND
+
+and also add two more columns
+ "Response": save the response we got for the relative query_number
+"Comments": write any excpetion or any useful notes
+
+
+after that create json response 
+with following fiekds:
+query_number
+chatId
+userId
+location_information 
+
+
+and send this to pub/sub topic "BotResponse"
+
+now, bot.js should listen this pub/sub topic "BotResponse" and response to the telegram user about what wo got.
+
+
+make sure all pub/sub topic name can be configurable
+
+write clean orgrnised code
+-----
+create users table with role
+
+and admin role user can access this dashboard
+create a user ramesh with password ramesh
+alllow change password functionality so that user can change the password any time.
+
+one more user, hardik and password is hardik
+------------
+also in dashbord, show timer before it goes to timeout
+------------
+If status is failed, give user friendly reason why it got failed on hover status
+if Node_response found, show the response on status hove
+on status changes, blink the row twice to  make attension
